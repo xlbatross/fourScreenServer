@@ -1,29 +1,49 @@
 from enum import Enum
 
 class ResponseType(Enum):
-    Chat = 1
+    # tcp
+    Chat = 0
+    # udp
+    FirstImage = 1
+    SecondImage = 2
+    ThirdImage = 3
+    FourthImage = 4
 
 class Response:
     def __init__(self):
-        self.headerBytes = bytearray()
-        self.dataBytes = bytearray()
-    
-    def totalBytes(self):
-        totalDataBytes = bytearray()
-        totalDataBytes.extend(len(self.headerBytes).to_bytes(4, "little"))
-        totalDataBytes.extend(self.headerBytes)
-        totalDataBytes.extend(self.dataBytes)
-        return totalDataBytes
-    
-    def extendBytes(self, data : bytearray):
-        self.headerBytes.extend(len(data).to_bytes(4, "little"))
-        self.dataBytes.extend(data)
+        self.dataBytesList : list[bytearray] = []
+        self.headerBytes : bytearray =  bytearray()
+        self.dataBytes : bytearray = bytearray()
 
-class ResChat(Response):
+class ResponseTCP(Response):
+    def __init__(self):
+        super().__init__()
+    
+    def packaging(self, typeValue : int):
+        headerList : list[int] = []
+
+        # 헤더
+        # 헤더의 길이(4바이트 정수형, 이 길이값은 이 뒤에 오는 데이터의 길이를 의미한다.)
+        # + 요청 타입(4바이트 정수형) + 데이터 하나의 바이트 길이(4바이트 정수형) * ((헤더의 길이 / 4바이트) - 1)
+        headerList.append(typeValue)
+        for db in self.dataBytesList:
+            headerList.append(len(db)) # 데이터 하나의 바이트 길이
+            self.dataBytes.extend(db) # 데이터 하나
+        
+        # 헤더의 길이
+        self.headerBytes.extend((len(headerList) * 4).to_bytes(4, "little"))
+        # 요청 타입 + 데이터 하나의 바이트 길이
+        for i in headerList:
+            self.headerBytes.extend(i.to_bytes(4, "little"))
+    
+    def totalSizeByte(self) -> bytes:
+        return (len(self.headerBytes) + len(self.dataBytes)).to_bytes(4, "little")
+
+class ResChat(ResponseTCP):
     def __init__(self, msg : str):
         super().__init__()
-        self.headerBytes.extend(ResponseType.Chat.value.to_bytes(4, "little"))
-        self.extendBytes(msg.encode())
+        self.dataBytesList.append(msg.encode())
+        self.packaging(ResponseType.Chat.value)
 
 
 
