@@ -1,4 +1,5 @@
 from enum import Enum
+from request import *
 
 class ResponseType(Enum):
     # tcp
@@ -44,6 +45,23 @@ class ResChat(ResponseTCP):
         super().__init__()
         self.dataBytesList.append(msg.encode())
         self.packaging(ResponseType.Chat.value)
+
+class ResponseUDP(Response):
+    def __init__(self):
+        super().__init__()
+    
+    def packaging(self, typeValue : int, seqNum : int):
+        self.headerBytes.extend(typeValue.to_bytes(4, "little"))
+        self.headerBytes.extend(seqNum.to_bytes(4, "little"))
+        self.dataBytes.extend(self.dataBytesList[0])
+    
+
+class ResImage(ResponseUDP):
+    def __init__(self, reqUdp : RequestUDP):
+        super().__init__()
+        self.dataBytesList.append(reqUdp.dataBytesList[0])
+        self.packaging(ResponseType.FirstImage.value, reqUdp.seqNum)
+
 
 
 

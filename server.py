@@ -56,12 +56,14 @@ def receiveTCP(sock : socket.socket):
                 reqtcp = ReqUDPConnect(reqtcp)
                 UDPSockList[(reqtcp.servIp, reqtcp.port)] = sock
                 clients[sock].udpAdr = (reqtcp.servIp, reqtcp.port)
-                restcp = ResChat("dddssddddd")
+                # restcp = ResChat("dddssddddd")
             
             if not restcp is None:
-                sock.sendall(restcp.totalSizeByte())
-                sock.sendall(restcp.headerBytes)
-                sock.sendall(restcp.dataBytes)
+                totalBytes = bytearray()
+                totalBytes.extend(restcp.totalSizeByte())
+                totalBytes.extend(restcp.headerBytes)
+                totalBytes.extend(restcp.dataBytes)
+                sock.sendall(totalBytes)
 
         except Exception as e:
             print(e)
@@ -84,8 +86,15 @@ def receiveUDP(sock: socket.socket):
             # change raw data to request tcp class
             requdp = RequestUDP(rawData)
 
-            if requdp.requsetType == RequestType.UDPConnect.value:
-                pass
+            resudp = None
+            if requdp.requsetType == RequestType.Image.value:
+                resudp = ResImage(requdp)
+
+            if not resudp is None:
+                totalBytes = bytearray()
+                totalBytes.extend(resudp.headerBytes)
+                totalBytes.extend(resudp.dataBytes)
+                sock.sendto(totalBytes, addr)
         except:
             pass
 
@@ -111,15 +120,3 @@ while True:
     cThread.daemon = True # 생성된 쓰레드의 데몬 여부를 True로 한다. (데몬 스레드 = 메인 스레드가 종료되면 즉시 종료되는 스레드)
     cThread.start() # 쓰레드 시작
     print(f"clients Count : {len(clients)} / connection {cAddr}")
-
-# resChat = ResChat("dddd")
-# totalBytes = resChat.totalBytes()
-
-# udpSock.sendto(len(totalBytes).to_bytes(4, "little"), addr)
-# udpSock.sendto(totalBytes, addr)
-
-# cSock.sendall(len(totalBytes).to_bytes(4, "little"))
-# cSock.sendall(totalBytes)
-
-# while True:
-#     pass
